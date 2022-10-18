@@ -33,6 +33,9 @@ module RSpec
         # Callback between retries
         config.add_setting :retry_callback, :default => nil
 
+        # Callback when a spec fails, but passes again after a retry
+        config.add_setting :success_after_retry_callback, :default => nil
+
         config.around(:each) do |ex|
           ex.run_with_retry
         end
@@ -122,6 +125,13 @@ module RSpec
 
         example.clear_exception
         ex.run
+
+
+        if RSpec.configuration.success_after_retry_callback
+          if attempts > 0 && example.exception.nil?
+            example.example_group_instance.instance_exec(example, &RSpec.configuration.success_after_retry_callback)
+          end
+        end
 
         self.attempts += 1
 
